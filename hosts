@@ -1,0 +1,2 @@
+[wordpress]
+192.168.56.10 ansible_user=vagrant ansible_ssh_private_key_file="/Users/mac/Desktop/devops/.vagrant/machines/wordpress/virtualbox/private_key"
