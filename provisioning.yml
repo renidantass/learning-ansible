@@ -1,5 +1,48 @@
 ---
-- hosts: all
+- hosts: database
+  handlers:
+    - name: 'restart mysql'
+      service:
+        name: mysql
+        state: restarted
+      become: yes
+      
+  tasks:
+    - name: 'Instala pacotes de dependência do MySQL'
+      apt:
+        name:
+          - mysql-server-5.6
+          - python-mysqldb
+        state: latest
+      become: yes
+
+    - name: 'Cria o banco no MySQL'
+      ansible.builtin.mysql_db:
+        name: wordpress_db
+        login_user: root
+        state: present
+
+    - name: 'Cria usuário no banco de dados'
+      mysql_user:
+        name: db_user
+        password: db_password
+        priv: '*.*:ALL'
+        state: present
+        login_user: root
+        host: "{{ item }}"
+      with_items:
+        - 'localhost'
+        - '127.0.0.1'
+        - '192.168.56.10'
+
+    - name: 'Configura MySQL para aceitar conexões remotas'
+      copy:
+        src: 'files/my.cnf'
+        dest: '/etc/mysql/my.cnf'
+      become: yes
+      notify: 'restart mysql'
+
+- hosts: wordpress
   handlers:
     - name: 'Reinicia apache'
       service:
@@ -8,7 +51,6 @@
       become: yes
 
   tasks:
-
     - name: 'Instala pacotes de dependência do sistema operacional'
       apt:
         name:
@@ -18,35 +60,19 @@
           - php5-gd
           - libssh2-php
           - php5-mcrypt
-          - mysql-server-5.6
-          - python-mysqldb
           - php5-mysql
           - unzip
         state: latest
       become: yes
 
-    - name: 'Cria o banco do MySQL'
-      ansible.builtin.mysql_db:
-        name: wordpress_db
-        login_user: root
-        state: present
-
-    - name: 'Cria usuário no banco de dados'
-      mysql_user:
-        name: reni
-        password: 1082
-        priv: '*.*:ALL'
-        state: present
-        login_user: root
-
     - name: 'Baixa útima versão do wordpress'
       get_url:
-        url: https://wordpress.org/latest.zip
-        dest: /tmp/wordpress_latest.zip
+        url: https://wordpress.org/wordpress-5.0.tar.gz
+        dest: /tmp/wordpres.tar.gz
 
-    - name: 'Descompactar wordpress.zip'
+    - name: 'Descompactar wordpres.tar.gz'
       unarchive:
-        src: /tmp/wordpress_latest.zip
+        src: /tmp/wordpres.tar.gz
         dest: /var/www/
         remote_src: yes
       become: yes
@@ -67,6 +93,7 @@
           - { regex: 'database_name_here', value: 'wordpress_db' }
           - { regex: 'username_here', value: 'reni' }
           - { regex: 'password_here', value: '1082' }
+          - { regex: 'localhost', value: '192.168.56.12' }
       become: yes
 
     - name: 'Configura apache2 para servir o wordpress'
