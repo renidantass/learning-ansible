@@ -1,0 +1,6 @@
+wp_db_name: wordpress_db
+wp_db_user: 'reni'
+wp_db_pass: '1082'
+wp_installation_dir: '/var/www/wordpress'
+wp_host_ip: '192.168.56.10'
+db_host_ip: '192.168.56.12'
